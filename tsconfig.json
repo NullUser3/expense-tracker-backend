@@ -1,0 +1,39 @@
+{
+  "compilerOptions": {
+    // File Layout
+    "rootDir": "..",        // points to expense-tracker/
+    "outDir": "./dist",
+
+    // Environment Settings
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "target": "esnext",
+    "lib": ["esnext"],
+    "types": ["node"],
+
+    // Path to shared types
+    "paths": {
+      "@shared/*": ["../shared/*"]
+    },
+
+    // Other Outputs
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+
+    // Stricter Typechecking Options
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+
+    // Recommended Options
+    "strict": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "noUncheckedSideEffectImports": true,
+    "moduleDetection": "force",
+    "skipLibCheck": true
+    // jsx removed — not needed for Node/Express
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
