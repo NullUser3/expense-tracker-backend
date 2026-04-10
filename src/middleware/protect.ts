@@ -4,6 +4,8 @@ import { UserModel } from "../models/User.js";
 
 type GuestUser = {
   _id: string;
+  name: string;
+  currency: string;
   role: "guest";
 };
 
@@ -13,6 +15,7 @@ type AuthUser = {
   email: string;
   currency: string;
   role: "user";
+  avatar?:string;
 };
 
 export type RequestUser = GuestUser | AuthUser;
@@ -20,6 +23,7 @@ export type RequestUser = GuestUser | AuthUser;
 export type JwtPayload = {
   id: string;
   role: "user" | "guest";
+  currency: string;
   iat: number;
   exp: number;
 };
@@ -34,18 +38,26 @@ const protect = async (req: Request, res: Response, next: NextFunction) => {
     if (!token) {
       // No token → create guest JWT
       const guestId = "guest_" + Date.now();
-      const guestPayload = { id: guestId, role: "guest" as const };
+      const guestPayload = {
+        id: guestId,
+        role: "guest" as const,
+        currency: "USD", // default
+      };
       token = jwt.sign(guestPayload, process.env.JWT_SECRET!, {
         expiresIn: "1d",
       });
-      // Set cookie so client can reuse it
       res.cookie("token", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
         maxAge: 1 * 24 * 60 * 60 * 1000,
       });
-      req.user = { _id: guestId, role: "guest" };
+      req.user = {
+        _id: guestId,
+        name: guestId,
+        currency: "USD",
+        role: "guest",
+      };
       return next();
     }
 
@@ -53,7 +65,12 @@ const protect = async (req: Request, res: Response, next: NextFunction) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
 
     if (decoded.role === "guest") {
-      req.user = { _id: decoded.id, role: "guest" };
+      req.user = {
+        _id: decoded.id,
+        name: decoded.id,
+        currency: decoded.currency,
+        role: "guest",
+      };
       return next();
     }
 
@@ -66,6 +83,7 @@ const protect = async (req: Request, res: Response, next: NextFunction) => {
       name: user.name,
       email: user.email,
       currency: user.currency,
+      avatar:user.avatar,
       role: "user",
     };
 

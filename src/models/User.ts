@@ -21,6 +21,9 @@ const userSchema = new mongoose.Schema<UserDocument>({
     lowercase: true,
     match: emailRegex,
   },
+  avatar:{
+    type: String
+  },
   passwordHash: {
     type: String,
     required: function() { return !this.googleId },

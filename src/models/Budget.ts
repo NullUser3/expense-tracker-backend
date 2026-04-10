@@ -10,7 +10,8 @@ const budgetSchema = new mongoose.Schema<BudgetDocument>({
   limit: { type: Number, required: true },
   month: { type: Number, required: true },
   year: { type: Number, required: true },
-});
+  recurring:{type:Boolean,default:false},
+},{timestamps:true});
 
 budgetSchema.index({ categoryId: 1, month: 1, year: 1, userId: 1 }, { unique: true });
 

@@ -5,7 +5,7 @@ import type { JwtPayload } from "../middleware/protect.ts";
 declare global {
   namespace Express {
     interface Request {
-      user: RequestUser;
+      user: RequestUser | null;
       token:JwtPayload;
     }
   }

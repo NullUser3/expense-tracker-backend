@@ -35,7 +35,8 @@ export const register = async (
       throw new Error("JWT_SECRET is not set!");
     }
 
-    const payload: JwtPayload = { id: user.id };
+
+    const payload = { id: user.id, role: "user" as const };
     const token = jwt.sign(payload, process.env.JWT_SECRET, {
       expiresIn: "7d",
     });
@@ -50,7 +51,6 @@ export const register = async (
     return res.status(201).json({
       message: "user registered succesfully",
       safeUser,
-      token: token,
     });
   } catch (error: any) {
     return res
@@ -89,7 +89,7 @@ export const login = async (
       throw new Error("JWT_SECRET is not set!");
     }
 
-    const payload: JwtPayload = { id: user.id };
+    const payload = { id: user.id, role: "user" as const };
     const token = jwt.sign(payload, process.env.JWT_SECRET, {
       expiresIn: "7d",
     });
@@ -103,11 +103,13 @@ export const login = async (
 
     const { passwordHash: _, ...safeUser } = user.toObject();
 
+
+
     return res.status(200).json({
       message: "logged in successfully",
       safeUser,
-      token: token,
     });
+    
   } catch (error: any) {
     return res
       .status(500)
@@ -135,10 +137,95 @@ export const logout = async (
   }
 };
 
+
+// export const loginAsGuest = async (req: Request, res: Response) => {
+//   try {
+//     if (!process.env.JWT_SECRET) throw new Error("JWT_SECRET is not set!");
+
+//     const guestId = "guest_" + Date.now();
+//     const token = jwt.sign(
+//       { id: guestId, role: "guest" as const },
+//       process.env.JWT_SECRET,
+//       { expiresIn: "1d" }
+//     );
+
+//     res.cookie("token", token, {
+//       httpOnly: true,
+//       secure: process.env.NODE_ENV === "production",
+//       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+//       maxAge: 1 * 24 * 60 * 60 * 1000,
+//     });
+
+//     return res.status(200).json({ message: "guest session started" });
+//   } catch (error: any) {
+//     return res.status(500).json({ message: error.message || "An unexpected error occurred" });
+//   }
+// };
+
 export const getMe = async (req: Request, res: Response) => {
-  if (!req.user) {
+  
+try {
+    if (!req.user) {
     return res.status(401).json({ message: "Not authenticated" });
   }
 
+
   return res.status(200).json({ user: req.user, token: req.token });
+} catch (error:any) {
+      return res
+      .status(500)
+      .json({ message: error.message || "An unexpected error occurred" });
+}
+};
+
+
+
+
+export const changeCurrency = async (req: Request, res: Response) => {
+
+  try {
+    const { currency } = req.body;
+
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    if (!currency) {
+      return res.status(400).json({ message: "No currency selected" });
+    }
+
+    const user = req.user;
+
+
+    if (user.role === "guest") {
+      const payload = {
+        id: user._id,
+        role: "guest" as const,
+        currency,
+      };
+
+      const token = jwt.sign(payload, process.env.JWT_SECRET!, {
+        expiresIn: "1d",
+      });
+
+      res.cookie("token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        maxAge: 1 * 24 * 60 * 60 * 1000,
+      });
+
+      return res.json({ currency });
+    }
+
+
+    if (user.role === "user") {
+      await UserModel.findByIdAndUpdate(user._id, { currency });
+
+      return res.json({ currency });
+    }
+
+  } catch (error) {
+    return res.status(500).json({ message: "Server error" });
+  }
 };

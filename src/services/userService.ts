@@ -1,7 +1,7 @@
 import { BudgetModel } from "../models/Budget.js";
 import { CategoryModel } from "../models/Category.js";
 import { ExpenseModel } from "../models/Expense.js";
-import { UserModel } from "../models/User.js";
+
 
 export const deleteGuestData = async () => {
   const dueDate = new Date(Date.now() - 24 * 60 * 60 * 1000);

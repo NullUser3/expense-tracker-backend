@@ -9,6 +9,6 @@ const categorySchema = new mongoose.Schema<CategoryDocument>({
   name: { type: String, required: true, trim: true },
   color: { type: String },
   icon: { type: String },
-});
+},{timestamps:true});
 
 export const CategoryModel = mongoose.model<CategoryDocument>("Category", categorySchema);

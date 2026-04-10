@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { ExpenseModel } from "../models/Expense.js";
 import { CategoryModel } from "../models/Category.js";
-import { calculateBudgetSpent } from "../services/budgetService.js";
+import { calculateBudgetSpent, calculateFinancialSummary } from "../services/budgetService.js";
 import { BudgetModel } from "../models/Budget.js";
 
 export const createExpense = async (
@@ -197,12 +197,15 @@ export const getBudgets = async (
     const userFilter =
       user.role === "guest" ? { guestId: user._id } : { userId: user._id };
 
-    const budgets = await BudgetModel.find({ ...userFilter, month, year });
+    const budgets = await BudgetModel.find({ ...userFilter, month, year }).populate('categoryId', 'name');
 
     const calculateAll = await Promise.all(
       budgets.map(async (budget) => {
+        const categoryId = (budget.categoryId as any)._id || budget.categoryId;
+        const categoryName = (budget.categoryId as any).name || "Unknown";
+
         const spent = await calculateBudgetSpent(
-          budget.categoryId,
+          categoryId,
           budget.month,
           budget.year,
           userFilter,
@@ -210,12 +213,13 @@ export const getBudgets = async (
 
         return {
           ...budget.toObject(),
+          categoryName,
           spent,
           remainingBudget: budget.limit + spent,
         };
       }),
     );
-    return res.status(200).json({ Budgets: calculateAll });
+    return res.status(200).json({ budgets: calculateAll });
   } catch (error: any) {
     return res
       .status(500)
@@ -264,3 +268,139 @@ export const getYearBudgets = async (
       .json({ message: error.message || "An unexpected error occurred" });
   }
 };
+
+
+
+export const getSummary = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    if (!req.user) return res.status(401).json({ message: "Unauthorized" });
+    const user = req.user;
+
+    // Convert query params to numbers
+    const month = Number(req.query.month); // 1-12
+    const year = Number(req.query.year);
+
+    if (!month || !year) {
+      return res.status(400).json({ message: "Month and year are required" });
+    }
+
+    const userFilter =
+      user.role === "guest" ? { guestId: user._id } : { userId: user._id };
+
+    const summary = await calculateFinancialSummary(month, year, userFilter);
+
+    return res.status(200).json(summary);
+
+  } catch (error: any) {
+    return res
+      .status(500)
+      .json({ message: error.message || "An unexpected error occurred" });
+  }
+}
+
+export const getSummaryHistory = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    if (!req.user) return res.status(401).json({ message: "Unauthorized" });
+    const user = req.user;
+ 
+    // Default to last 6 months if not specified
+    const months = Math.min(Number(req.query.months) || 6, 12);
+ 
+    if (isNaN(months) || months < 1) {
+      return res.status(400).json({ message: "Invalid months parameter" });
+    }
+ 
+    const userFilter =
+      user.role === "guest" ? { guestId: user._id } : { userId: user._id };
+ 
+    const now = new Date();
+ 
+    // Build array of { month, year } pairs going back N months from current
+    const monthYearPairs = Array.from({ length: months }, (_, i) => {
+      const date = new Date(now.getFullYear(), now.getMonth() - (months - 1 - i), 1);
+      return { month: date.getMonth() + 1, year: date.getFullYear() };
+    });
+ 
+    const history = await Promise.all(
+      monthYearPairs.map(async ({ month, year }) => {
+        const start = new Date(year, month - 1, 1);
+        const end = new Date(year, month, 1);
+ 
+        const [budgets, expenses] = await Promise.all([
+          BudgetModel.find({ ...userFilter, month, year }),
+          ExpenseModel.find({ ...userFilter, date: { $gte: start, $lt: end } }),
+        ]);
+ 
+        const totalIncome = budgets.reduce((sum, b) => sum + b.limit, 0);
+        const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
+ 
+        return {
+          month,
+          year,
+          label: new Date(year, month - 1, 1).toLocaleString("default", { month: "short" }),
+          income: totalIncome,
+          expenses: totalExpenses,
+          netSavings: totalIncome - totalExpenses,
+        };
+      }),
+    );
+ 
+    return res.status(200).json({ history });
+  } catch (error: any) {
+    return res
+      .status(500)
+      .json({ message: error.message || "An unexpected error occurred" });
+  }
+};
+
+export const getCategoryTotals = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    if (!req.user) return res.status(401).json({ message: "Unauthorized" });
+    const user = req.user;
+
+    const month = Number(req.query.month);
+    const year = Number(req.query.year);
+
+    if (!month || !year) {
+      return res.status(400).json({ message: "Month and year are required" });
+    }
+
+    const userFilter =
+      user.role === "guest" ? { guestId: user._id } : { userId: user._id };
+
+    const start = new Date(year, month - 1, 1);
+    const end = new Date(year, month, 1);
+
+    const expenses = await ExpenseModel.find({
+      ...userFilter,
+      date: { $gte: start, $lt: end },
+    });
+
+    const totals: Record<string, number> = {};
+    expenses.forEach((expense) => {
+      if (expense.categoryId) {
+        const catId = expense.categoryId.toString();
+        totals[catId] = (totals[catId] || 0) + expense.amount;
+      }
+    });
+
+    return res.status(200).json({ totals });
+  } catch (error: any) {
+    return res
+      .status(500)
+      .json({ message: error.message || "An unexpected error occurred" });
+  }
+};
+
