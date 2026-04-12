@@ -75,8 +75,8 @@ app.use("/api/budgets", budgetRoutes);
 app.use("/api/expenses", expenseRoutes);
 app.use("/auth", authRoutes);
 
-app.get("/api/init", protect, (req, res) => {
-  res.status(200).json({ user: req.user });
+app.get("/api/ping", (req, res) => {
+  res.status(200).json({ message: "service is running" });
 });
 
 const PORT = process.env.PORT || 5000;
