@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import { UserModel } from "../models/User.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
+import type { RequestUser } from "../middleware/protect.js";
 
 interface JwtPayload {
   id: string;
@@ -194,7 +195,7 @@ export const changeCurrency = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "No currency selected" });
     }
 
-    const user = req.user;
+    const user = req.user as RequestUser;
 
 
     if (user.role === "guest") {

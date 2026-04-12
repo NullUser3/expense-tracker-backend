@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import { CategoryModel } from "../models/Category.js";
 import { ExpenseModel } from "../models/Expense.js";
 import { BudgetModel } from "../models/Budget.js";
+import type { RequestUser } from "../middleware/protect.js";
 
 export const createCategory = async (
   req: Request,
@@ -11,7 +12,7 @@ export const createCategory = async (
   try {
     const { name, icon, color } = req.body;
     if (!req.user) return res.status(401).json({ message: "Unauthorized" });
-    const user = req.user;
+    const user = req.user as RequestUser;
 
     if (!name) {
       return res.status(400).json({ message: "name is required" });
@@ -55,7 +56,7 @@ export const deleteCategory = async (
     if (!req.user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    const user = req.user;
+    const user = req.user as RequestUser;
 
     const { categoryId } = req.params;
     if (!categoryId) {
@@ -94,7 +95,7 @@ export const updateCategory = async (
     if (!req.user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    const user = req.user;
+    const user = req.user as RequestUser;
 
     const { categoryId } = req.params;
     const { name, icon, color } = req.body;
@@ -147,7 +148,7 @@ export const getCategories = async (
     if (!req.user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    const user = req.user;
+    const user = req.user as RequestUser;
 
     const userFilter = user.role === "guest" ? { guestId: user._id } : { userId: user._id };
 

@@ -4,6 +4,7 @@ import { CategoryModel } from "../models/Category.js";
 import { Types } from "mongoose";
 import { calculateBudgetSpent } from "../services/budgetService.js";
 import { ExpenseModel } from "../models/Expense.js";
+import type { RequestUser } from "../middleware/protect.js";
 
 export const createBudget = async (
   req: Request,
@@ -12,7 +13,7 @@ export const createBudget = async (
 ) => {
   try {
     if (!req.user) return res.status(401).json({ message: "Unauthorized" });
-    const user = req.user;
+    const user = req.user as RequestUser;
 
     const { categoryId, limit, month, year, recurring } = req.body;
 
@@ -89,7 +90,7 @@ export const deleteBudget = async (
 ) => {
   try {
     if (!req.user) return res.status(401).json({ message: "Unauthorized" });
-    const user = req.user;
+    const user = req.user as RequestUser;
 
     const budgetIdParam = req.params.budgetId as string;
     if (!budgetIdParam) {
@@ -134,7 +135,7 @@ export const updateBudget = async (
 ) => {
   try {
     if (!req.user) return res.status(401).json({ message: "Unauthorized" });
-    const user = req.user;
+    const user = req.user as RequestUser;
 
     const budgetIdParam = req.params.budgetId as string;
     if (!budgetIdParam) {
@@ -213,7 +214,7 @@ export const getBudgets = async (
 ) => {
   try {
     if (!req.user) return res.status(401).json({ message: "Unauthorized" });
-    const user = req.user;
+    const user = req.user as RequestUser;
 
     const month = Number(req.query.month);
     const year = Number(req.query.year);

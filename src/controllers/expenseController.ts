@@ -3,6 +3,7 @@ import { ExpenseModel } from "../models/Expense.js";
 import { CategoryModel } from "../models/Category.js";
 import { calculateBudgetSpent, calculateFinancialSummary } from "../services/budgetService.js";
 import { BudgetModel } from "../models/Budget.js";
+import type { RequestUser } from "../middleware/protect.js";
 
 export const createExpense = async (
   req: Request,
@@ -11,7 +12,7 @@ export const createExpense = async (
 ) => {
   try {
     if (!req.user) return res.status(401).json({ message: "Unauthorized" });
-    const user = req.user;
+    const user = req.user as RequestUser;
 
     const { amount, categoryId, description, date } = req.body;
 
@@ -57,7 +58,7 @@ export const deleteExpense = async (
 ) => {
   try {
     if (!req.user) return res.status(401).json({ message: "Unauthorized" });
-    const user = req.user;
+    const user = req.user as RequestUser;
 
     const expenseIdParam = req.params.expenseId as string;
     if (!expenseIdParam) {
@@ -92,7 +93,7 @@ export const updateExpense = async (
 ) => {
   try {
     if (!req.user) return res.status(401).json({ message: "Unauthorized" });
-    const user = req.user;
+    const user = req.user as RequestUser;
 
     const expenseIdParam = req.params.expenseId as string;
     if (!expenseIdParam) {
@@ -152,7 +153,7 @@ export const getExpenses = async (
 ) => {
   try {
     if (!req.user) return res.status(401).json({ message: "Unauthorized" });
-    const user = req.user;
+    const user = req.user as RequestUser;
 
     const { categoryId, month, year } = req.query;
 
@@ -190,7 +191,7 @@ export const getBudgets = async (
 ) => {
   try {
     if (!req.user) return res.status(401).json({ message: "Unauthorized" });
-    const user = req.user;
+    const user = req.user as RequestUser;
 
     const { month, year }: any = req.query;
 
@@ -234,7 +235,7 @@ export const getYearBudgets = async (
 ) => {
   try {
     if (!req.user) return res.status(401).json({ message: "Unauthorized" });
-    const user = req.user;
+    const user = req.user as RequestUser;
 
     const { year }: any = req.query;
 
@@ -278,7 +279,7 @@ export const getSummary = async (
 ) => {
   try {
     if (!req.user) return res.status(401).json({ message: "Unauthorized" });
-    const user = req.user;
+    const user = req.user as RequestUser;
 
     // Convert query params to numbers
     const month = Number(req.query.month); // 1-12
@@ -309,7 +310,7 @@ export const getSummaryHistory = async (
 ) => {
   try {
     if (!req.user) return res.status(401).json({ message: "Unauthorized" });
-    const user = req.user;
+    const user = req.user as RequestUser;
  
     // Default to last 6 months if not specified
     const months = Math.min(Number(req.query.months) || 6, 12);
@@ -368,7 +369,7 @@ export const getCategoryTotals = async (
 ) => {
   try {
     if (!req.user) return res.status(401).json({ message: "Unauthorized" });
-    const user = req.user;
+    const user = req.user as RequestUser;
 
     const month = Number(req.query.month);
     const year = Number(req.query.year);
